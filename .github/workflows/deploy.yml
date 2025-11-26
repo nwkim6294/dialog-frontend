@@ -34,31 +34,33 @@ jobs:
           docker build -t dialog-frontend-test .
 
   # CD: 배포 (main 브랜치만)
-  cd:
-    needs: ci
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+cd:
+  needs: ci
+  runs-on: ubuntu-latest
+  if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Copy Frontend Files
-        run: |
-          ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} 'mkdir -p /opt/dialog/dialog-frontend'
-          scp -i ~/.ssh/id_rsa -r ./* ubuntu@${{ secrets.EC2_HOST }}:/opt/dialog/dialog-frontend/
+    - name: Build and Push Docker Image
+      run: |
+        docker build -t munwalk/dialog-frontend:latest .
+        docker push munwalk/dialog-frontend:latest
 
-      - name: Rebuild Frontend Container
-        run: |
-          ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} '
-            cd /opt/dialog
-            docker-compose up -d --build --no-deps frontend
-            docker-compose ps
-          '
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd /opt/dialog
+          docker pull munwalk/dialog-frontend:latest
+          docker-compose up -d frontend
