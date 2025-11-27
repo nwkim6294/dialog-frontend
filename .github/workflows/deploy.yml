@@ -62,13 +62,12 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /opt/dialog
-            docker pull munwalk/dialog-frontend:latest
+            # 기존 컨테이너 강제 삭제 (어떤 방식으로 만들어졌든)
             docker stop dialog-frontend || true
             docker rm dialog-frontend || true
-            docker run -d \
-              --name dialog-frontend \
-              --network dialog_default \
-              --restart unless-stopped \
-              -p 80:80 \
-              munwalk/dialog-frontend:latest
+            # 최신 이미지 받기
+            docker pull munwalk/dialog-frontend:latest
+            # Frontend 재시작
+            docker-compose up -d --no-deps frontend
+            # 상태 확인
             docker ps | grep dialog-frontend
