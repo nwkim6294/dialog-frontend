@@ -58,7 +58,7 @@ async function deleteContextOnBackend(sessionId) {
     if (!sessionId) return;
     
     try {
-        await fetch('http://localhost:8000/api/context/delete', {
+        await fetch('http://dialogai.duckdns.org:8000/api/context/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -279,8 +279,7 @@ async function sendMessage() {
         // FAQ는 FastAPI로, 검색은 Spring Boot로
         const endpoint = currentChatMode === 'search' 
             ? 'http://dialogai.duckdns.org:8080/api/chatbot/search'  // Spring Boot
-            : 'http://localhost:8000/api/faq';            // FastAPI
-
+            : 'http://dialogai.duckdns.org:8000/api/faq';            // FastAPI
         // [수정] 모드별로 요청 body 구조 다르게 생성
         let requestBody;
         
