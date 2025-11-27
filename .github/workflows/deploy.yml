@@ -63,5 +63,12 @@ jobs:
           script: |
             cd /opt/dialog
             docker pull munwalk/dialog-frontend:latest
-            docker-compose up -d --no-deps --force-recreate frontend
+            docker stop dialog-frontend || true
+            docker rm dialog-frontend || true
+            docker run -d \
+              --name dialog-frontend \
+              --network dialog_default \
+              --restart unless-stopped \
+              -p 80:80 \
+              munwalk/dialog-frontend:latest
             docker ps | grep dialog-frontend
