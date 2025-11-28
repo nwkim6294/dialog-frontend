@@ -1,7 +1,3 @@
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const BACKEND_BASE_URL = isLocal ? 'http://localhost:8080' : 'http://dialogai.duckdns.org:8080';
-const AI_BASE_URL = isLocal ? 'http://localhost:8000' : 'http://dialogai.duckdns.org:8000';
-
 /* ===============================
    meetings.js - 회의록 목록 관리 (정렬/필터/검색 포함)
 =================================*/

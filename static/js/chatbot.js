@@ -1,7 +1,3 @@
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const BACKEND_BASE_URL = isLocal ? 'http://localhost:8080' : 'http://dialogai.duckdns.org:8080';
-const AI_BASE_URL = isLocal ? 'http://localhost:8000' : 'http://dialogai.duckdns.org:8000';
-
 // 전역 함수로 명시적 등록
 window.toggleHistory = function() {
     const sidebar = document.getElementById('historySidebar');
