@@ -42,12 +42,12 @@ passwordToggles.forEach(toggle => {
         
         if (input.type === 'password') {
             input.type = 'text';
-            eyeIcon.style.display = 'none';
-            eyeOffIcon.style.display = 'block';
-        } else {
-            input.type = 'password';
             eyeIcon.style.display = 'block';
             eyeOffIcon.style.display = 'none';
+        } else {
+            input.type = 'password';
+            eyeIcon.style.display = 'none';
+            eyeOffIcon.style.display = 'block';
         }
     });
 });
