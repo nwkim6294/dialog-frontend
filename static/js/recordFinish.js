@@ -1427,7 +1427,11 @@ function displayAISummary() {
 
             // 안전장치: 텍스트에 '중요도 평가'가 남아있다면 제거
             if (reason) {
-                reason = reason.split(/중요도\s*평가/)[0].trim();
+                reason = reason
+                    .replace(/\*\*/g, '') // ** 문자 제거
+                    .split(/중요도\s*평가/)[0]
+                    .replace(/^[-\s:]+/, '')
+                    .trim();
             }
 
             const badgeSpan = document.createElement("span");
