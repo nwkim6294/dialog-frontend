@@ -44,7 +44,7 @@ Vanilla JavaScript로 구현되었으며, 컴포넌트 재사용을 통해 일�
 | 이름 | 역할 | 담당 영역 |
 |------|------|-----------|
 | **김나운, 장문선** | Frontend Lead | 전체 HTML/CSS/JS 기본 구조 설계 및 구현 |
-| **김나운** | Real-time STT | 실시간 음성 녹음 및 STT 처리 |
+| **김나운** | STT | 실시간 음성 녹음 및 STT 처리(실시간 문장 인식 & 발화자 구분) |
 | **장문선** | Chatbot & CI/CD | AI 챗봇, 설정 페이지, 자동 배포 파이프라인 |
 | **지승엽** | AI Integration | AI 요약, 할일 추출 기능 |
 | **강승훈** | Authentication & Admin | 로그인, 비밀번호 재설정, 관리자 페이지 |
@@ -116,7 +116,13 @@ dialog-frontend/
 - WebSocket 기반 실시간 음성 인식
 - AudioWorklet API를 활용한 고품질 오디오 처리
 - 48kHz → 16kHz 리샘플링 (pcm-processor.js)
-- CLOVA Speech API 연동
+- CLOVA Speech API
+
+### 🗣️ 발화자 분석 STT (Speech-to-Text)
+- 녹음 완료 후 오디오 파일 기반 발화자 분석 요청
+- 발화자 분석 결과를 기반으로 화자별 STT 결과 분리
+- 다중 화자 회의/대화 환경에서 발화 흐름 시각화
+- CLOVA Speech API (Speaker Diarization)
 
 ### 🔐 OAuth 2.0 소셜 로그인
 - Google 계정 연동
@@ -159,8 +165,8 @@ dialog-frontend/
 | 페이지 | 파일명 | 설명 |
 |--------|--------|------|
 | 회의 설정 | `recordSetting.html` | 제목, 참석자, 키워드 설정 |
-| 실시간 녹음 | `recording.html` | STT 실시간 변환 및 표시 |
-| 녹음 완료 | `recordFinish.html` | 녹음 종료 및 저장 |
+| 실시간 녹음 | `recording.html` | STT 실시간 변환 및 표시 및 녹음 종료 및 저장 |
+| 녹음 완료 | `recordFinish.html` | 녹음 파일을 이용한 발화자 STT 분석 및 AI 요약, 발화 로그, 할일 목록 생성|
 | 회의 상세 | `meetingDetail.html` | AI 요약, 발화 로그, 할일 목록 |
 | 회의 목록 | `meetings.html` | 필터링, 정렬, 검색 기능 |
 
@@ -193,10 +199,12 @@ dialog-frontend/
 실시간 녹음 시작 (recording.html)
 - 마이크 권한 획득
 - WebSocket 연결
-- 실시간 STT 표시
+- 실시간 문장 인식 STT 표시
+- 음성 파일 저장 (Object Storage)
          ↓
 녹음 종료 (recordFinish.html)
-- 음성 파일 저장 (Object Storage)
+- WebSocket 연결
+- 발화자 분석 STT 요청
 - AI 분석 요청 (요약, 할일, 키워드)
          ↓
 회의 상세 (meetingDetail.html)
@@ -206,22 +214,22 @@ dialog-frontend/
 - PDF 내보내기
 ```
 
-### 실시간 STT 처리 플로우
+### 실시간 & 발화자 분석 STT 처리 플로우
 ```
 마이크 입력 (getUserMedia API)
          ↓
 AudioWorklet (pcm-processor.js)
 - 48kHz → 16kHz 리샘플링
 - Float32 → Int16 변환
-- 160샘플 프레임 생성
+- STT 전송 단위(160 samples) 프레임 생성
          ↓
-WebSocket 전송 (Binary)
+WebSocket 전송 (Binary PCM)
          ↓
 Backend → AI Server (gRPC)
          ↓
 CLOVA STT 응답
 - 발화 텍스트
-- 화자 정보
+- 화자(Speaker) 정보
          ↓
 실시간 화면 표시
 - 화자별 색상 구분
@@ -279,7 +287,8 @@ fetch("components/chatbot.html")
 **recording.js**
 ```javascript
 // STT WebSocket 연결
-const ws = new WebSocket(`wss://dialogai.ddns.net/ws/stt`);
+const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+const ws = new WebSocket(`${protocol}//${location.host}/ws/realtime`);
 
 ws.onopen = () => {
   // 세션 시작 메시지 전송
